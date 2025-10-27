@@ -21,7 +21,7 @@ namespace NodeGenerator.Parsers
             _logger = logger;
         }
 
-        public IAsyncEnumerable<NodeModel> Parse(string path, CancellationToken stoppingToken)
+        public IAsyncEnumerable<NodeModel> ParseAsync(string path, CancellationToken stoppingToken)
         {
             return ReadFromXml(path, stoppingToken);
         }

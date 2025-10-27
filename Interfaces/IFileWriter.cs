@@ -6,6 +6,6 @@ namespace NodeGenerator.Interfaces
 {
     public interface IFileWriter
     {
-        public Task Write(IList<EndpointModel> endpointModels);
+        public Task Write(IReadOnlyCollection<EndpointModel> endpointModels);
     }
 }

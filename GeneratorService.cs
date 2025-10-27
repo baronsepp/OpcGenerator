@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -25,12 +26,12 @@ namespace NodeGenerator
             IHostApplicationLifetime lifetime,
             ILogger<GeneratorService> logger)
         {
-            _configuration = configuration;
-            _fileParser = fileParser;
-            _fileWriter = fileWriter;
-            _endpointFactory = endpointFactory;
-            _logger = logger;
-            _lifetime = lifetime;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _fileParser = fileParser ?? throw new ArgumentNullException(nameof(fileParser));
+            _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
+            _endpointFactory = endpointFactory ?? throw new ArgumentNullException(nameof(endpointFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
         }
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,7 +48,7 @@ namespace NodeGenerator
 
             _logger.LogInformation($"Found {fullPath}");
             
-            var nodes = _fileParser.Parse(fullPath, stoppingToken);
+            var nodes = _fileParser.ParseAsync(fullPath, stoppingToken);
             var endpoints = await _endpointFactory.CreateAsync(nodes, stoppingToken);
             await _fileWriter.Write(endpoints);
 

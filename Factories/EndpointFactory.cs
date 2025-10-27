@@ -21,7 +21,7 @@ namespace NodeGenerator.Factories
             _logger = logger;
         }
 
-        public async Task<IList<EndpointModel>> CreateAsync(IAsyncEnumerable<NodeModel> enumerable, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<EndpointModel>> CreateAsync(IAsyncEnumerable<NodeModel> enumerable, CancellationToken cancellationToken)
         {
             var collectionBuilder = new ReadOnlyCollectionBuilder<NodeModel>();
 
@@ -39,11 +39,6 @@ namespace NodeGenerator.Factories
 
             _logger.LogInformation($"Added nodes to {endpointModel}");
             return new List<EndpointModel>(1) { endpointModel };
-        }
-
-        public IList<EndpointModel> Create(IEnumerable<NodeModel> nodes)
-        {
-            throw new NotImplementedException();
         }
     }
 }

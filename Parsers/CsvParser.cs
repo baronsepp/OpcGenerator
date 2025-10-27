@@ -21,7 +21,7 @@ namespace NodeGenerator.Parsers
             _logger = logger;
         }
 
-        public IAsyncEnumerable<NodeModel> Parse(string path, CancellationToken stoppingToken = default)
+        public IAsyncEnumerable<NodeModel> ParseAsync(string path, CancellationToken stoppingToken = default)
         {
             var fileLines = ReadFromCsv(path, stoppingToken);
             return ParseLineAsync(fileLines, stoppingToken);

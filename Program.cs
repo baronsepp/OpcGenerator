@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System;
+using System.IO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,7 +8,6 @@ using NodeGenerator.Factories;
 using NodeGenerator.Interfaces;
 using NodeGenerator.Parsers;
 using NodeGenerator.Writers;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace NodeGenerator
@@ -25,12 +26,6 @@ namespace NodeGenerator
         private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
-                .ConfigureHostConfiguration(conf =>
-                {
-                    conf.SetBasePath(Directory.GetCurrentDirectory());
-                    conf.AddJsonFile("appsettings.json", optional: false);
-                    conf.AddCommandLine(args);
-                })
                 .ConfigureLogging(logging =>
                 {
                     logging.AddSimpleConsole(c =>
@@ -38,22 +33,37 @@ namespace NodeGenerator
                         c.UseUtcTimestamp = true;
                         c.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
                     });
-                    //logging.
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    if (hostContext.Configuration.GetValue<string>("InputFileName").EndsWith("csv"))
-                        services.AddScoped<IFileParser, CsvParser>();
+                    services.AddSingleton<IFileParser>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
 
-                    if (hostContext.Configuration.GetValue<string>("InputFileName").EndsWith("xml"))
-                        services.AddScoped<IFileParser, XmlParser>();
+                        var fileName = config.GetValue<string>("InputFileName");
+                        if(string.IsNullOrEmpty(fileName)) throw new NullReferenceException("InputFileName");
 
+                        var extension = Path.GetExtension(fileName);
+                        if ("xml".Equals(extension, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var logger = provider.GetRequiredService<ILogger<XmlParser>>();
+                            return new XmlParser(config, logger);
+                        }
+                        if ("csv".Equals(extension, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var logger = provider.GetRequiredService<ILogger<CsvParser>>();
+                            return new CsvParser(config, logger);
+                        }
 
-                    services.AddScoped<IFileWriter, JsonWriter>();
-                    services.AddTransient<IEndpointFactory, EndpointFactory>();
+                        throw new NotSupportedException($"Extension '{extension}' is not supported.");
+                    });
+
+                    services.AddSingleton<IFileWriter, JsonWriter>();
+                    services.AddSingleton<IEndpointFactory, EndpointFactory>();
 
                     services.AddHostedService<GeneratorService>();
-                });
+                })
+                .UseConsoleLifetime();
         }
     }
 }

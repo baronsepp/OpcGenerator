@@ -6,6 +6,6 @@ namespace NodeGenerator.Interfaces
 {
     public interface IFileParser
     {
-        IAsyncEnumerable<NodeModel> Parse(string path, CancellationToken stoppingToken);
+        IAsyncEnumerable<NodeModel> ParseAsync(string path, CancellationToken stoppingToken);
     }
 }

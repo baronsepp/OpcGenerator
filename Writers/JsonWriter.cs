@@ -6,31 +6,35 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
 namespace NodeGenerator.Writers
 {
     public class JsonWriter : IFileWriter
     {
         private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _environment;
         private readonly ILogger<JsonWriter> _logger;
 
-        public JsonWriter(IConfiguration configuration, ILogger<JsonWriter> logger)
+        private static readonly JsonSerializerOptions JsonOptions = new () { WriteIndented = true };
+
+        public JsonWriter(IConfiguration configuration, IHostEnvironment environment, ILogger<JsonWriter> logger)
         {
             _configuration = configuration;
+            _environment = environment;
             _logger = logger;
         }
 
-        public async Task Write(IList<EndpointModel> endpointModels)
+        public async Task Write(IReadOnlyCollection<EndpointModel> endpointModels)
         {
             var outputFileName = _configuration.GetValue<string>("OutputFileName");
-            var options = new JsonSerializerOptions { WriteIndented = true };
 
             using (var fileStream = File.Create(outputFileName))
             {
-                await JsonSerializer.SerializeAsync(fileStream, endpointModels, options);
+                await JsonSerializer.SerializeAsync(fileStream, endpointModels, JsonOptions);
             }
 
-            _logger.LogInformation($"Finished writing to {outputFileName} in {Directory.GetCurrentDirectory()}");
+            _logger.LogInformation($"Finished writing to {outputFileName} in {_environment.ContentRootPath}");
         }
     }
 }
