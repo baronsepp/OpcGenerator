@@ -21,7 +21,7 @@ namespace NodeGenerator
             var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
             await generator.StartAsync(lifetime.ApplicationStopping);
 
-            return 0;
+            return Environment.ExitCode;
         }
 
         private static IHostBuilder CreateHostBuilder(string[] args)
@@ -51,7 +51,7 @@ namespace NodeGenerator
                         if (".xml".Equals(extension, StringComparison.OrdinalIgnoreCase))
                         {
                             var logger = provider.GetRequiredService<ILogger<XmlParser>>();
-                            return new XmlParser(config, logger);
+                            return new XmlParser(config);
                         }
 
                         if (".csv".Equals(extension, StringComparison.OrdinalIgnoreCase))

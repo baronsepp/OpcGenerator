@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+
 using NodeGenerator.Interfaces;
 using NodeGenerator.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Xml;
 
@@ -13,12 +14,10 @@ namespace NodeGenerator.Parsers
     public class XmlParser : IFileParser
     {
         private readonly IConfiguration _configuration;
-        private readonly ILogger<XmlParser> _logger;
 
-        public XmlParser(IConfiguration configuration, ILogger<XmlParser> logger)
+        public XmlParser(IConfiguration configuration)
         {
             _configuration = configuration;
-            _logger = logger;
         }
 
         public IAsyncEnumerable<NodeModel> ParseAsync(string path, CancellationToken stoppingToken)
@@ -46,8 +45,8 @@ namespace NodeGenerator.Parsers
                 do
                 {
                     reader.MoveToAttribute("NodeId");
-                    var intermediateId = await reader.GetValueAsync();
-                    var id = intermediateId.Replace("&quot;", "\"");
+                    var sb = new StringBuilder(await reader.GetValueAsync());
+                    var id = sb.Replace("&quot;", "\"").ToString();
 
                     reader.ReadToFollowing("DisplayName");
                     var displayName = await reader.ReadElementContentAsStringAsync();
