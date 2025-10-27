@@ -46,7 +46,8 @@ namespace NodeGenerator.Parsers
                 do
                 {
                     reader.MoveToAttribute("NodeId");
-                    var id = await reader.GetValueAsync();
+                    var intermediateId = await reader.GetValueAsync();
+                    var id = intermediateId.Replace("&quot;", "\"");
 
                     reader.ReadToFollowing("DisplayName");
                     var displayName = await reader.ReadElementContentAsStringAsync();
