@@ -1,58 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using NodeGenerator.Factories;
+using NodeGenerator.Interfaces;
+using NodeGenerator.Parsers;
+using NodeGenerator.Writers;
 using System.IO;
-using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using static NodeGenerator.NodeGenerator;
+using System.Threading.Tasks;
 
 namespace NodeGenerator
 {
     public static class Program
     {
-        private static IEnumerable<string> Tags { get; set; }
-        private static string Path { get; set; }
-        
-        public static void Main()
+        public static async Task<int> Main(string[] args)
         {
-            //Nsu = Ask("ExpandedNodeId");
-            //Channel = Ask("Channel");
-            //Device = Ask("Device");
-            //Path = Ask("Path");
+            using var host = CreateHostBuilder(args).Build();
 
-            var tags = File.ReadAllLines(Path, Encoding.UTF8)
-                .Skip(1)
-                .Select(FromCsv)
-                .ToList();
+            await host.RunAsync();
 
-            var publishedNode = new PublishedNode
-            {
-                EndpointUrl = Ask("Endpoint"), 
-                UseSecurity = false,
-                OpcNodes = tags
-            };
-            var publishedNodes = new List<PublishedNode> { publishedNode };
-
-            var json = JsonConvert.SerializeObject(publishedNodes);
-            var formattedJson = JToken.Parse(json).ToString(Formatting.Indented);
-            using var writer = new StreamWriter("./publishednodes.json");
-            writer.WriteLine(formattedJson);
-            writer.Flush(); writer.Dispose();
+            return 0;
         }
 
-        private static string Ask(string input)
+        private static IHostBuilder CreateHostBuilder(string[] args)
         {
-            Console.Write($"Enter {input}: ");
-            var answer = Console.ReadLine();
-            return answer;
-        }
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureHostConfiguration(conf =>
+                {
+                    conf.SetBasePath(Directory.GetCurrentDirectory());
+                    conf.AddJsonFile("appsettings.json", optional: false);
+                    conf.AddCommandLine(args);
+                })
+                .ConfigureLogging(logging =>
+                {
+                    logging.AddSimpleConsole(c =>
+                    {
+                        c.UseUtcTimestamp = true;
+                        c.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
+                    });
+                    //logging.
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    if (hostContext.Configuration.GetValue<string>("InputFileName").EndsWith("csv"))
+                        services.AddScoped<IFileParser, CsvParser>();
 
-        private static Node FromCsv(string csvLine)
-        {
-            var values = csvLine.Replace("\"", "").Split(',');
-            var node = new Node { Id = Prefix + values[0] };
-            return node;
+                    if (hostContext.Configuration.GetValue<string>("InputFileName").EndsWith("xml"))
+                        services.AddScoped<IFileParser, XmlParser>();
+
+
+                    services.AddScoped<IFileWriter, JsonWriter>();
+                    services.AddTransient<IEndpointFactory, EndpointFactory>();
+
+                    services.AddHostedService<GeneratorService>();
+                });
         }
     }
 }
