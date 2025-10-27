@@ -1,12 +1,12 @@
-﻿using System;
-using System.IO;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NodeGenerator.Interfaces;
 using NodeGenerator.Parsers;
 using NodeGenerator.Writers;
+using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace NodeGenerator
@@ -27,6 +27,7 @@ namespace NodeGenerator
         private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
+                .UseConsoleLifetime()
                 .ConfigureLogging(logging =>
                 {
                     logging.AddSimpleConsole(c =>
@@ -35,14 +36,16 @@ namespace NodeGenerator
                         c.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
                     });
                 })
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
+                    services.AddSingleton<GeneratorService>();
+                    services.AddSingleton<IFileWriter, JsonWriter>();
                     services.AddSingleton<IFileParser>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
 
                         var fileName = config.GetValue<string>("InputFileName");
-                        if(string.IsNullOrEmpty(fileName)) throw new NullReferenceException("InputFileName");
+                        if (string.IsNullOrEmpty(fileName)) throw new NullReferenceException("InputFileName");
 
                         var extension = Path.GetExtension(fileName);
                         if (".xml".Equals(extension, StringComparison.OrdinalIgnoreCase))
@@ -50,6 +53,7 @@ namespace NodeGenerator
                             var logger = provider.GetRequiredService<ILogger<XmlParser>>();
                             return new XmlParser(config, logger);
                         }
+
                         if (".csv".Equals(extension, StringComparison.OrdinalIgnoreCase))
                         {
                             var logger = provider.GetRequiredService<ILogger<CsvParser>>();
@@ -58,11 +62,7 @@ namespace NodeGenerator
 
                         throw new NotSupportedException($"Extension '{extension}' is not supported.");
                     });
-
-                    services.AddSingleton<IFileWriter, JsonWriter>();
-                    services.AddSingleton<GeneratorService>();
-                })
-                .UseConsoleLifetime();
+                });
         }
     }
 }

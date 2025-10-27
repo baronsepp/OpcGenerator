@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using NodeGenerator.Interfaces;
+using NodeGenerator.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NodeGenerator.Interfaces;
-using NodeGenerator.Models;
 
 namespace NodeGenerator
 {
@@ -21,7 +21,7 @@ namespace NodeGenerator
 
         public GeneratorService(
             IConfiguration configuration,
-            IFileParser fileParser, 
+            IFileParser fileParser,
             IFileWriter fileWriter,
             ILogger<GeneratorService> logger)
         {
@@ -30,7 +30,7 @@ namespace NodeGenerator
             _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var fileName = _configuration.GetValue<string>("InputFileName");
@@ -44,7 +44,7 @@ namespace NodeGenerator
             }
 
             _logger.LogInformation($"Found {fullPath}");
-            
+
             var nodes = _fileParser.ParseAsync(fullPath, stoppingToken);
             var endpoints = await CreateEndpointAsync(nodes, stoppingToken);
             await _fileWriter.Write(endpoints);

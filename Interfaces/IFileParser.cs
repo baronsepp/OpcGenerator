@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using NodeGenerator.Models;
+using System.Collections.Generic;
 using System.Threading;
-using NodeGenerator.Models;
 
 namespace NodeGenerator.Interfaces
 {

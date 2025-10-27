@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NodeGenerator.Interfaces;
 using NodeGenerator.Models;
@@ -6,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 
 namespace NodeGenerator.Writers
 {
@@ -16,7 +16,7 @@ namespace NodeGenerator.Writers
         private readonly IHostEnvironment _environment;
         private readonly ILogger<JsonWriter> _logger;
 
-        private static readonly JsonSerializerOptions JsonOptions = new () { WriteIndented = true };
+        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
         public JsonWriter(IConfiguration configuration, IHostEnvironment environment, ILogger<JsonWriter> logger)
         {
