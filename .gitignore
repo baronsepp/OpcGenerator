@@ -10,8 +10,6 @@
 # Allowed File Types
 !.gitignore
 !.editorconfig
-!*.sln
-!*.slnf
 !*.csproj
 !*.cs
 !*.json
