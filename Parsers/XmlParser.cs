@@ -36,21 +36,28 @@ namespace NodeGenerator.Parsers
                 IgnoreWhitespace = true
             };
 
+            var sampleInterval = _configuration.GetValue<int>("OPC:SampleInterval");
+            var publishInterval = _configuration.GetValue<int>("OPC:PublishInterval");
+
             await using (var fileStream = File.OpenRead(path))
             using (var reader = XmlReader.Create(fileStream, settings))
             {
                 reader.ReadToFollowing(nodeName);
                 do
                 {
-                    var nodeModel = new NodeModel();
-
                     reader.MoveToAttribute("NodeId");
-                    nodeModel.Id = await reader.GetValueAsync();
+                    var id = await reader.GetValueAsync();
 
                     reader.ReadToFollowing("DisplayName");
-                    nodeModel.DisplayName = await reader.ReadElementContentAsStringAsync();
+                    var displayName = await reader.ReadElementContentAsStringAsync();
 
-                    yield return nodeModel;
+                    yield return new NodeModel
+                    {
+                        Id = id,
+                        OpcSamplingInterval = sampleInterval,
+                        OpcPublishingInterval = publishInterval,
+                        DisplayName = displayName
+                    };
 
                 } while (cancellationToken.IsCancellationRequested is false && reader.ReadToFollowing(nodeName));
             }
