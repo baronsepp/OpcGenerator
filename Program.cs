@@ -2,7 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NodeGenerator.Interfaces;
+using NodeGenerator.Options;
 using NodeGenerator.Parsers;
 using NodeGenerator.Writers;
 using System;
@@ -36,8 +38,13 @@ namespace NodeGenerator
                         c.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
                     });
                 })
-                .ConfigureServices((_, services) =>
+                .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddOptions();
+                    services.Configure<OpcOptions>(hostContext.Configuration.GetRequiredSection(OpcOptions.Section).Bind);
+                    services.Configure<XmlOptions>(hostContext.Configuration.GetSection(XmlOptions.Section).Bind);
+                    services.Configure<CsvOptions>(hostContext.Configuration.GetSection(CsvOptions.Section).Bind);
+
                     services.AddSingleton<GeneratorService>();
                     services.AddSingleton<IFileWriter, JsonWriter>();
                     services.AddSingleton<IFileParser>(provider =>
@@ -50,14 +57,17 @@ namespace NodeGenerator
                         var extension = Path.GetExtension(fileName);
                         if (".xml".Equals(extension, StringComparison.OrdinalIgnoreCase))
                         {
-                            var logger = provider.GetRequiredService<ILogger<XmlParser>>();
-                            return new XmlParser(config);
+                            var opc = provider.GetRequiredService<IOptions<OpcOptions>>();
+                            var xml = provider.GetRequiredService<IOptions<XmlOptions>>();
+                            return new XmlParser(xml, opc);
                         }
 
                         if (".csv".Equals(extension, StringComparison.OrdinalIgnoreCase))
                         {
                             var logger = provider.GetRequiredService<ILogger<CsvParser>>();
-                            return new CsvParser(config, logger);
+                            var opc = provider.GetRequiredService<IOptions<OpcOptions>>();
+                            var csv = provider.GetRequiredService<IOptions<CsvOptions>>();
+                            return new CsvParser(csv, opc, logger);
                         }
 
                         throw new NotSupportedException($"Extension '{extension}' is not supported.");

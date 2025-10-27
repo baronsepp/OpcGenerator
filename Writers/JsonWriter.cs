@@ -12,7 +12,7 @@ namespace NodeGenerator.Writers
 {
     public class JsonWriter : IFileWriter
     {
-        private readonly IConfiguration _configuration;
+        private readonly string _outputFileName;
         private readonly IHostEnvironment _environment;
         private readonly ILogger<JsonWriter> _logger;
 
@@ -20,21 +20,19 @@ namespace NodeGenerator.Writers
 
         public JsonWriter(IConfiguration configuration, IHostEnvironment environment, ILogger<JsonWriter> logger)
         {
-            _configuration = configuration;
+            _outputFileName = configuration.GetValue<string>("OutputFileName");
             _environment = environment;
             _logger = logger;
         }
 
         public async Task Write(IReadOnlyCollection<EndpointModel> endpointModels)
         {
-            var outputFileName = _configuration.GetValue<string>("OutputFileName");
-
-            using (var fileStream = File.Create(outputFileName))
+            using (var fileStream = File.Create(_outputFileName))
             {
                 await JsonSerializer.SerializeAsync(fileStream, endpointModels, JsonOptions);
             }
 
-            _logger.LogInformation($"Finished writing to {outputFileName} in {_environment.ContentRootPath}");
+            _logger.LogInformation($"Finished writing to {_outputFileName} in {_environment.ContentRootPath}");
         }
     }
 }

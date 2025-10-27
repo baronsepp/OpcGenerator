@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NodeGenerator.Interfaces;
 using NodeGenerator.Models;
+using NodeGenerator.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,23 +20,26 @@ namespace NodeGenerator
         private readonly IFileParser _fileParser;
         private readonly IFileWriter _fileWriter;
         private readonly ILogger<GeneratorService> _logger;
+        private readonly OpcOptions _opcOptions;
+        private readonly string _fileName;
 
         public GeneratorService(
             IConfiguration configuration,
             IFileParser fileParser,
             IFileWriter fileWriter,
-            ILogger<GeneratorService> logger)
+            ILogger<GeneratorService> logger,
+            IOptions<OpcOptions> opcOptions)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _fileName = configuration.GetValue<string>("InputFileName") ?? throw new ArgumentNullException(nameof(configuration));
             _fileParser = fileParser ?? throw new ArgumentNullException(nameof(fileParser));
             _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _opcOptions = opcOptions.Value ?? throw new ArgumentNullException(nameof(opcOptions));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var fileName = _configuration.GetValue<string>("InputFileName");
-            var fullPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + fileName;
+            var fullPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + _fileName;
             _logger.LogInformation($"Searching for {fullPath}");
 
             if (File.Exists(fullPath) is false)
@@ -61,8 +66,8 @@ namespace NodeGenerator
 
             var endpointModel = new EndpointModel
             {
-                EndpointUrl = _configuration.GetValue<string>("OPC:EndpointUrl"),
-                UseSecurity = _configuration.GetValue<bool>("OPC:UseSecurity"),
+                EndpointUrl = _opcOptions.EndpointUrl,
+                UseSecurity = _opcOptions.UseSecurity,
                 OpcNodes = collectionBuilder.ToReadOnlyCollection()
             };
 

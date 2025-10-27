@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
-
+﻿using Microsoft.Extensions.Options;
 using NodeGenerator.Interfaces;
 using NodeGenerator.Models;
+using NodeGenerator.Options;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -13,11 +13,13 @@ namespace NodeGenerator.Parsers
 {
     public class XmlParser : IFileParser
     {
-        private readonly IConfiguration _configuration;
+        private readonly XmlOptions _xmlOptions;
+        private readonly OpcOptions _opcOptions;
 
-        public XmlParser(IConfiguration configuration)
+        public XmlParser(IOptions<XmlOptions> xmlOptions, IOptions<OpcOptions> opcOptions)
         {
-            _configuration = configuration;
+            _xmlOptions = xmlOptions.Value;
+            _opcOptions = opcOptions.Value;
         }
 
         public IAsyncEnumerable<NodeModel> ParseAsync(string path, CancellationToken stoppingToken)
@@ -27,7 +29,6 @@ namespace NodeGenerator.Parsers
 
         private async IAsyncEnumerable<NodeModel> ReadFromXml(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var nodeName = _configuration.GetValue<string>("XML:NodeName");
             var settings = new XmlReaderSettings
             {
                 Async = true,
@@ -35,13 +36,10 @@ namespace NodeGenerator.Parsers
                 IgnoreWhitespace = true
             };
 
-            var sampleInterval = _configuration.GetValue<int>("OPC:SampleInterval");
-            var publishInterval = _configuration.GetValue<int>("OPC:PublishInterval");
-
             await using (var fileStream = File.OpenRead(path))
             using (var reader = XmlReader.Create(fileStream, settings))
             {
-                reader.ReadToFollowing(nodeName);
+                reader.ReadToFollowing(_xmlOptions.NodeName);
                 do
                 {
                     reader.MoveToAttribute("NodeId");
@@ -54,12 +52,12 @@ namespace NodeGenerator.Parsers
                     yield return new NodeModel
                     {
                         Id = id,
-                        OpcSamplingInterval = sampleInterval,
-                        OpcPublishingInterval = publishInterval,
+                        OpcSamplingInterval = _opcOptions.SampleInterval,
+                        OpcPublishingInterval = _opcOptions.PublishInterval,
                         DisplayName = displayName
                     };
 
-                } while (cancellationToken.IsCancellationRequested is false && reader.ReadToFollowing(nodeName));
+                } while (cancellationToken.IsCancellationRequested is false && reader.ReadToFollowing(_xmlOptions.NodeName));
             }
         }
     }
