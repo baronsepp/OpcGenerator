@@ -2,7 +2,7 @@
 
 namespace NodeGenerator.Models
 {
-    public struct EndpointModel
+    public class EndpointModel
     {
         public string EndpointUrl { get; init; }
         public bool UseSecurity { get; init; }

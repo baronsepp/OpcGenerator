@@ -48,6 +48,7 @@ namespace NodeGenerator.Parsers
 
             await foreach (var line in csvLines.WithCancellation(stoppingToken))
             {
+
                 if (skipFirst is true)
                 {
                     skipFirst = false;
